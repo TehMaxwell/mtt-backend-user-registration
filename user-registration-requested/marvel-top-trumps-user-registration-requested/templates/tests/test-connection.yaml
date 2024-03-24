@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "marvel-top-trumps-user-registration-requested.fullname" . }}-test-connection"
+  labels:
+    {{- include "marvel-top-trumps-user-registration-requested.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "marvel-top-trumps-user-registration-requested.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never
