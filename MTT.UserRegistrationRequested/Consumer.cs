@@ -6,6 +6,7 @@ DESCRIPTION: The Kafka consumer class for the user-registration-requested consum
 
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
+using MTT.Configuration.Kafka;
 
 namespace MTT.UserRegistrationRequested
 {
@@ -15,34 +16,27 @@ namespace MTT.UserRegistrationRequested
     public class UserRegistrationRequestedConsumer
     {
         // PROPERTIES
-        string consumerTopic = "user-registration-requested";
-        string producerTopic = "user-registration-completed";
+        Topics kafkaTopics;
         Guid containerGuid = Guid.NewGuid();
 
         // Kafka Consumer Configuration
-        // ConsumerConfig consumerConfig = new ConsumerConfig
-        // {
-        //     BootstrapServers = "Kafka.Kafka:9092",
-        //     GroupId = "user-registration-requested-group",
-        //     AutoOffsetReset = AutoOffsetReset.Earliest,
-        //     EnableAutoCommit = false        // Disables auto commiting, allowing for "at-least once" functionality in the consumer
-        // };
         ConsumerConfig consumerConfig;
 
         // Kafka Producer Configuration
-        // ProducerConfig producerConfig = new ProducerConfig 
-        // {
-        //     BootstrapServers = "Kafka.Kafka:9092"
-        // };
         ProducerConfig producerConfig;
 
         // METHODS
         /// <summary>
         /// Constructor. Performs dependency injection activities.
         /// </summary>
-        public UserRegistrationRequestedConsumer(IOptions<ConsumerConfig> consumerConfigContainer, IOptions<ProducerConfig> producerConfigContainer) {
-            consumerConfig = consumerConfigContainer.Value;
-            producerConfig = producerConfigContainer.Value;
+        public UserRegistrationRequestedConsumer(IOptions<Topics> topicsConfigContainer, IOptions<ConsumerConfiguration> consumerConfigContainer, IOptions<ProducerConfiguration> producerConfigContainer) {
+            kafkaTopics = topicsConfigContainer.Value;      // Topic Configuration Setup
+            
+            // Consumer Config Setup
+            consumerConfig = KafkaConfigurationHelper.BuildConsumerConfig(consumerConfigContainer.Value);
+
+            // Producer Config Setup
+            producerConfig = KafkaConfigurationHelper.BuildProducerConfig(producerConfigContainer.Value);
         }
 
         /// <summary>
@@ -52,10 +46,10 @@ namespace MTT.UserRegistrationRequested
             // Building the consumer with the "using" structure. Ensures correct disposal of consumer resources at the end of execution.
             using (IConsumer<Ignore, string> consumer = new ConsumerBuilder<Ignore, string>(consumerConfig).Build()) {
                 using (IProducer<Null, string> producer = new ProducerBuilder<Null, string>(producerConfig).Build()) {
-                    consumer.Subscribe(consumerTopic);      // Subscribing to the configured topic
+                    consumer.Subscribe(kafkaTopics.ConsumerTopic);      // Subscribing to the configured topic
                     CancellationToken cancellationToken = new CancellationToken();      // Creating the cancellation token for the consumer
 
-                    Console.WriteLine($"Consumer with GUID {containerGuid} has subscribed to topic {consumerTopic}");
+                    Console.WriteLine($"Consumer with GUID {containerGuid} has subscribed to topic {kafkaTopics.ConsumerTopic}");
 
                     while(!cancellationToken.IsCancellationRequested) {
                         ConsumeResult<Ignore, string> consumeResult = consumer.Consume(cancellationToken);
@@ -65,11 +59,16 @@ namespace MTT.UserRegistrationRequested
                         Console.WriteLine($"Consumer: {containerGuid}, Message received: {consumeResult.Message}");
                         await Task.Delay(3000);
 
-                        // Producing a new message
+                        // Creating a message object
                         Message<Null, string> produceMessage = new Message<Null, string> {
                             Value = $"Message from Container {containerGuid}: hello there!"
                         };
-                        await producer.ProduceAsync(producerTopic, produceMessage);
+
+                        // Producing a message for all configured producer topics
+                        foreach (string producerTopic in kafkaTopics.ProducerTopics)
+                        {
+                            await producer.ProduceAsync(producerTopic, produceMessage);
+                        }
 
                         // HANDLE THE CONSUMED MESSAGE BETWEEN THESE COMMENTS
 
