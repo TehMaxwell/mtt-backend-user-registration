@@ -10,7 +10,7 @@
 replicaCount: 1
 
 image:
-  repository: nginx
+  repository: tehmaxwell/marvel-top-trumps-user-registration-requested
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""

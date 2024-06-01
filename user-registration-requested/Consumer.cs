@@ -65,6 +65,7 @@ namespace MTT.UserRegistrationRequested
                         Console.WriteLine($"Consumer: {containerGuid}, Message received: {consumeResult.Message}");
                         await Task.Delay(3000);
 
+                        // Producing a new message
                         Message<Null, string> produceMessage = new Message<Null, string> {
                             Value = $"Message from Container {containerGuid}: hello there!"
                         };
