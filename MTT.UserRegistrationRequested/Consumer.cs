@@ -43,6 +43,13 @@ namespace MTT.UserRegistrationRequested
         /// Starts the Kafka consumption loop and executes the relevant code each time a message is available.
         /// </summary>
         public async Task Start() {
+            Console.WriteLine($"Starting application with container GUID {containerGuid}");
+
+            Console.WriteLine("\nConsumer configuration:");
+            Console.WriteLine($"Bootstrap Server: {consumerConfig.BootstrapServers}");
+            Console.WriteLine($"Group ID: {consumerConfig.GroupId}");
+            Console.WriteLine("----------------------\n");
+
             // Building the consumer with the "using" structure. Ensures correct disposal of consumer resources at the end of execution.
             using (IConsumer<Ignore, string> consumer = new ConsumerBuilder<Ignore, string>(consumerConfig).Build()) {
                 using (IProducer<Null, string> producer = new ProducerBuilder<Null, string>(producerConfig).Build()) {

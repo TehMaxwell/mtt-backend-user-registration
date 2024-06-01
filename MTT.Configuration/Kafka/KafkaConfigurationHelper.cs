@@ -43,7 +43,7 @@ namespace MTT.Configuration.Kafka
                 BootstrapServers = baseConsumerConfiguration.BootstrapServers,
                 GroupId = baseConsumerConfiguration.GroupId,
                 AutoOffsetReset = autoOffsetReset,
-                EnableAutoCommit = baseConsumerConfiguration.EnableAutoCommit
+                EnableAutoCommit = baseConsumerConfiguration.EnableAutoCommit,
             };
 
             return consumerConfig;

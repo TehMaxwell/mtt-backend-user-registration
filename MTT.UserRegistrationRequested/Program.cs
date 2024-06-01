@@ -7,6 +7,7 @@ DESCRIPTION: Top level execution file for the user-registration-requested-consum
 using Confluent.Kafka;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MTT.Configuration.Kafka;
 using MTT.UserRegistrationRequested;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
@@ -14,8 +15,9 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 // ADD SERVICE REGISTRATION CODE BETWEEN COMMENTS
 
 // Registration of Configuration Services
-builder.Services.Configure<ConsumerConfig>(builder.Configuration.GetSection("ConsumerConfig"));
-builder.Services.Configure<ProducerConfig>(builder.Configuration.GetSection("ProducerConfig"));
+builder.Services.Configure<Topics>(builder.Configuration.GetSection("Topics"));
+builder.Services.Configure<ConsumerConfiguration>(builder.Configuration.GetSection("ConsumerConfiguration"));
+builder.Services.Configure<ProducerConfiguration>(builder.Configuration.GetSection("ProducerConfiguration"));
 
 // Registration of Kafka Services
 builder.Services.AddScoped<UserRegistrationRequestedConsumer>();
@@ -25,6 +27,7 @@ builder.Services.AddScoped<UserRegistrationRequestedConsumer>();
 IHost host = builder.Build();
 
 UserRegistrationRequestedConsumer consumer = host.Services.GetRequiredService<UserRegistrationRequestedConsumer>();
-Task consumerTask = consumer.Start();
+await consumer.Start();
+
 
 await host.RunAsync();      // Running the application code

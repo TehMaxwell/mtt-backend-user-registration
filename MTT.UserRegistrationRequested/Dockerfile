@@ -1,15 +1,24 @@
-# DOCKERFILE
-# A base docker build file for all MTT consumer/producer containers.
+#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-# ----- BUILD SEQUENCE -----
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS buildImage
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
+USER app
 WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+COPY ["MTT.UserRegistrationRequested/MTT.UserRegistrationRequested.csproj", "MTT.UserRegistrationRequested/"]
+COPY ["MTT.Configuration/MTT.Configuration.csproj", "MTT.Configuration/"]
+RUN dotnet restore "./MTT.UserRegistrationRequested/MTT.UserRegistrationRequested.csproj"
 COPY . .
-RUN dotnet restore
-RUN dotnet publish -c Release -o out
+WORKDIR "/src/MTT.UserRegistrationRequested"
+RUN dotnet build "./MTT.UserRegistrationRequested.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# ----- FINAL IMAGE -----
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./MTT.UserRegistrationRequested.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
 WORKDIR /app
-COPY --from=buildImage /app/out .
-ENTRYPOINT [ "./user-registration-requested" ]
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "MTT.UserRegistrationRequested.dll"]
