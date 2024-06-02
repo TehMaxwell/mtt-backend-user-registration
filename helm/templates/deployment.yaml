@@ -36,6 +36,21 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: "Topics__ConsumerTopic"
+              value: {{ .Values.topics.consumerTopic | quote }}
+            - name: "Topics__ProducerTopic"
+              value: {{ .Values.topics.producerTopic | quote }}
+            - name: "ProducerConfiguration__BootstrapServers"
+              value: {{ .Values.producerConfiguration.bootstrapServers | quote }}
+            - name: "ConsumerConfiguration__BootstrapServers"
+              value: {{ .Values.consumerConfiguration.bootstrapServers | quote }}
+            - name: "ConsumerConfiguration__GroupId"
+              value: {{ .Values.consumerConfiguration.groupId | quote }}
+            - name: "ConsumerConfiguration__AutoOffsetReset"
+              value: {{ .Values.consumerConfiguration.autoOffsetReset | quote }}
+            - name: "ConsumerConfiguration__EnableAutoCommit"
+              value: {{ .Values.consumerConfiguration.enableAutoCommit | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

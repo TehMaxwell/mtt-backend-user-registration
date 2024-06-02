@@ -44,6 +44,7 @@ namespace MTT.Configuration.Kafka
                 GroupId = baseConsumerConfiguration.GroupId,
                 AutoOffsetReset = autoOffsetReset,
                 EnableAutoCommit = baseConsumerConfiguration.EnableAutoCommit,
+                ClientId = Guid.NewGuid().ToString()
             };
 
             return consumerConfig;

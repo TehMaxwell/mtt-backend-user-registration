@@ -17,8 +17,8 @@ namespace MTT.Configuration.Kafka
         public string ConsumerTopic { get; set; }
 
         /// <summary>
-        /// A list of topics that the Kafka Producer publishes to.
+        /// The topic that the Kafka Producer will publish information to.
         /// </summary>
-        public string[] ProducerTopics { get; set; }
+        public string ProducerTopic { get; set; }
     }
 }

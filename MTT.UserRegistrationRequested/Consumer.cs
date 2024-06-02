@@ -43,15 +43,25 @@ namespace MTT.UserRegistrationRequested
         /// Starts the Kafka consumption loop and executes the relevant code each time a message is available.
         /// </summary>
         public async Task Start() {
+            Console.WriteLine("Version 0.4.1");
             Console.WriteLine($"Starting application with container GUID {containerGuid}");
 
             Console.WriteLine("\nConsumer configuration:");
             Console.WriteLine($"Bootstrap Server: {consumerConfig.BootstrapServers}");
             Console.WriteLine($"Group ID: {consumerConfig.GroupId}");
+            Console.WriteLine($"Auto Offset Reset: {consumerConfig.AutoOffsetReset}");
+            Console.WriteLine($"Enable Auto Commit: {consumerConfig.EnableAutoCommit}");
             Console.WriteLine("----------------------\n");
 
+            // Creating the Kafka Consumer builder and configuring it
+            ConsumerBuilder<Ignore, string> consumerBuilder = new ConsumerBuilder<Ignore, string>(consumerConfig);
+            consumerBuilder.SetPartitionsAssignedHandler((c, assignments) =>
+            {
+                Console.WriteLine($"Assigned partitions {string.Join(", ", assignments.Select(x => x.Partition.Value))}");
+            });
+
             // Building the consumer with the "using" structure. Ensures correct disposal of consumer resources at the end of execution.
-            using (IConsumer<Ignore, string> consumer = new ConsumerBuilder<Ignore, string>(consumerConfig).Build()) {
+            using (IConsumer<Ignore, string> consumer = consumerBuilder.Build()) {
                 using (IProducer<Null, string> producer = new ProducerBuilder<Null, string>(producerConfig).Build()) {
                     consumer.Subscribe(kafkaTopics.ConsumerTopic);      // Subscribing to the configured topic
                     CancellationToken cancellationToken = new CancellationToken();      // Creating the cancellation token for the consumer
@@ -59,6 +69,7 @@ namespace MTT.UserRegistrationRequested
                     Console.WriteLine($"Consumer with GUID {containerGuid} has subscribed to topic {kafkaTopics.ConsumerTopic}");
 
                     while(!cancellationToken.IsCancellationRequested) {
+                        Console.WriteLine("Consuming next message, or waiting for new message.");
                         ConsumeResult<Ignore, string> consumeResult = consumer.Consume(cancellationToken);
 
                         // HANDLE THE CONSUMED MESSAGE BETWEEN THESE COMMENTS
@@ -70,12 +81,7 @@ namespace MTT.UserRegistrationRequested
                         Message<Null, string> produceMessage = new Message<Null, string> {
                             Value = $"Message from Container {containerGuid}: hello there!"
                         };
-
-                        // Producing a message for all configured producer topics
-                        foreach (string producerTopic in kafkaTopics.ProducerTopics)
-                        {
-                            await producer.ProduceAsync(producerTopic, produceMessage);
-                        }
+                        await producer.ProduceAsync(kafkaTopics.ProducerTopic, produceMessage);     // Producing an output message to the configured topic
 
                         // HANDLE THE CONSUMED MESSAGE BETWEEN THESE COMMENTS
 
@@ -92,6 +98,8 @@ namespace MTT.UserRegistrationRequested
                     consumer.Close();
                 }
             }
+
+            Console.WriteLine("Consumer exiting...");
 
             return;
         }
